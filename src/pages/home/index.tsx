@@ -2,6 +2,7 @@ import { useQuery } from "@apollo/client";
 import {
   Button,
   CircularProgress,
+  Pagination,
   Paper,
   Table,
   TableBody,
@@ -9,12 +10,11 @@ import {
   TableCellProps,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   TextField,
 } from "@mui/material";
-import { getLocation } from "../../services/graphql/queries";
 import { useEffect, useState } from "react";
+import { getLocation } from "../../services/graphql/queries";
 
 interface IColumn {
   id: string;
@@ -45,10 +45,18 @@ const columns: Array<IColumn> = [
   },
 ];
 
+const LINE_PER_PAGE = 3;
+
 function Home() {
   const { loading, data } = useQuery(getLocation);
   const [searchValue, setSearchValue] = useState<string>("");
   const [listData, setListData] = useState<any>([]);
+
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const startIndex = (currentPage - 1) * LINE_PER_PAGE;
+  const endIndex = startIndex + LINE_PER_PAGE;
+  const currentList = listData.slice(startIndex, endIndex);
 
   useEffect(() => {
     setListData(data?.locations);
@@ -61,6 +69,10 @@ function Home() {
         item.name.toLowerCase().includes(lowerSearchTerm)
       )
     );
+  };
+
+  const handlePageChange = (page: any) => {
+    setCurrentPage(page);
   };
 
   if (loading)
@@ -86,43 +98,50 @@ function Home() {
             Search
           </Button>
         </div>
-        <div className="wrap-table">
-          <TableContainer component={Paper}>
-            <Table aria-label="simple-table">
-              <TableHead>
-                <TableRow>
-                  {columns.map((item) => (
-                    <TableCell key={item.id} align={item.align}>
-                      {item.label}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {listData?.map((item: any) => (
-                  <TableRow
-                    key={item.id}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      {item.id}
-                    </TableCell>
-                    <TableCell component="th" scope="row">
-                      {item.name}
-                    </TableCell>
-                    <TableCell align="center">{item.description}</TableCell>
-                    <TableCell align="center">
-                      <img
-                        className="image-item"
-                        alt="location-reference"
-                        src={`${item.photo}`}
-                      />
-                    </TableCell>
-                  </TableRow>
+
+        <TableContainer component={Paper}>
+          <Table aria-label="simple-table">
+            <TableHead>
+              <TableRow>
+                {columns.map((item) => (
+                  <TableCell key={item.id} align={item.align}>
+                    {item.label}
+                  </TableCell>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {currentList?.map((item: any) => (
+                <TableRow
+                  key={item.id}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    {item.id}
+                  </TableCell>
+                  <TableCell component="th" scope="row">
+                    {item.name}
+                  </TableCell>
+                  <TableCell align="center">{item.description}</TableCell>
+                  <TableCell align="center">
+                    <img
+                      className="image-item"
+                      alt="location-reference"
+                      src={`${item.photo}`}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <div className="wrap-pagination">
+          <Pagination
+            count={Math.ceil(listData.length / LINE_PER_PAGE)}
+            variant="outlined"
+            shape="rounded"
+            onChange={(_, page) => handlePageChange(page)}
+          />
         </div>
       </div>
     </div>
