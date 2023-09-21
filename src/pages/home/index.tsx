@@ -15,6 +15,9 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { getLocation } from "../../services/graphql/queries";
+import { useLocation, useNavigate } from "react-router-dom";
+import { addQueryToUrl } from "../../utils/common";
+import { ROUTE } from "../../constants/routesPath";
 
 interface IColumn {
   id: string;
@@ -48,31 +51,38 @@ const columns: Array<IColumn> = [
 const LINE_PER_PAGE = 3;
 
 function Home() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const searchName = searchParams.get("searchName");
+  const page = searchParams.get("page");
+
   const { loading, data } = useQuery(getLocation);
-  const [searchValue, setSearchValue] = useState<string>("");
   const [listData, setListData] = useState<any>([]);
-
-  const [currentPage, setCurrentPage] = useState<number>(1);
-
-  const startIndex = (currentPage - 1) * LINE_PER_PAGE;
-  const endIndex = startIndex + LINE_PER_PAGE;
-  const currentList = listData?.slice(startIndex, endIndex);
+  const [searchValue, setSearchValue] = useState<string>("");
 
   useEffect(() => {
-    setListData(data?.locations);
-  }, [data]);
+    const startIndex = (Number(page || 1) - 1) * LINE_PER_PAGE;
+    const endIndex = startIndex + LINE_PER_PAGE;
+    if (searchName) {
+      const lowerSearchTerm = searchName?.toLowerCase();
+      return setListData(
+        data?.locations
+          ?.filter((item: any) =>
+            item.name.toLowerCase().includes(lowerSearchTerm)
+          )
+          ?.slice(startIndex, endIndex)
+      );
+    }
+    return setListData(data?.locations?.slice(startIndex, endIndex));
+  }, [data?.locations, page, searchName]);
 
   const handleSearch = () => {
-    const lowerSearchTerm = searchValue.toLowerCase();
-    setListData(
-      data?.locations?.filter((item: any) =>
-        item.name.toLowerCase().includes(lowerSearchTerm)
-      )
-    );
+    navigate(addQueryToUrl(ROUTE.HOME, { searchName: searchValue }));
   };
 
   const handlePageChange = (page: any) => {
-    setCurrentPage(page);
+    navigate(addQueryToUrl(ROUTE.HOME, { page, searchName: searchValue }));
   };
 
   if (loading)
@@ -111,7 +121,7 @@ function Home() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {currentList?.map((item: any) => (
+              {listData?.map((item: any) => (
                 <TableRow
                   key={item.id}
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
@@ -137,7 +147,7 @@ function Home() {
         </TableContainer>
         <div className="wrap-pagination">
           <Pagination
-            count={Math.ceil(listData?.length / LINE_PER_PAGE)}
+            count={Math.ceil(data?.locations?.length / LINE_PER_PAGE) || 1}
             variant="outlined"
             shape="rounded"
             onChange={(_, page) => handlePageChange(page)}
