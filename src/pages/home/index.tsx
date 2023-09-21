@@ -56,7 +56,7 @@ function Home() {
 
   const startIndex = (currentPage - 1) * LINE_PER_PAGE;
   const endIndex = startIndex + LINE_PER_PAGE;
-  const currentList = listData.slice(startIndex, endIndex);
+  const currentList = listData?.slice(startIndex, endIndex);
 
   useEffect(() => {
     setListData(data?.locations);
@@ -137,7 +137,7 @@ function Home() {
         </TableContainer>
         <div className="wrap-pagination">
           <Pagination
-            count={Math.ceil(listData.length / LINE_PER_PAGE)}
+            count={Math.ceil(listData?.length / LINE_PER_PAGE)}
             variant="outlined"
             shape="rounded"
             onChange={(_, page) => handlePageChange(page)}
