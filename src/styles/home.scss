@@ -9,6 +9,12 @@
   max-width: 768px;
 }
 
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .image-item {
   max-width: 200px;
 }
@@ -23,7 +29,6 @@
 .wrap-search {
   display: flex;
   justify-content: end;
-  margin-bottom: 16px;
 }
 
 .wrap-pagination {
