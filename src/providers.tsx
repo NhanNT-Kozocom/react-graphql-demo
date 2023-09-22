@@ -6,7 +6,7 @@ interface IProps {
 }
 
 const apolloClient = new ApolloClient({
-  uri: "https://flyby-router-demo.herokuapp.com/",
+  uri: "http://localhost:4000/graphql",
   cache: new InMemoryCache(),
 });
 
