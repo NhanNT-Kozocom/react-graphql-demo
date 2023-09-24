@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 import { ROUTE } from "../constants/routesPath";
-import { CreateAuthor, Home } from "../pages";
+import { CreateAuthor, DetailAuthor, EditAuthor, ListAuthor } from "../pages";
 
 interface IRoutes {
   path: string;
@@ -10,14 +10,24 @@ interface IRoutes {
 
 const routesList: Array<IRoutes> = [
   {
-    path: ROUTE.HOME,
+    path: ROUTE.AUTHOR.LIST,
     auth: false,
-    component: Home,
+    component: ListAuthor,
   },
   {
-    path: ROUTE.CREATE_AUTHOR,
+    path: ROUTE.AUTHOR.CREATE,
     auth: false,
     component: CreateAuthor,
+  },
+  {
+    path: ROUTE.AUTHOR.DETAIL,
+    auth: false,
+    component: DetailAuthor,
+  },
+  {
+    path: ROUTE.AUTHOR.EDIT,
+    auth: false,
+    component: EditAuthor,
   },
 ];
 

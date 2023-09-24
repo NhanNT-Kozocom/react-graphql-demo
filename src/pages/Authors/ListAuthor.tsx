@@ -1,6 +1,8 @@
-import { useQuery } from "@apollo/client";
-import { Add, Delete, Edit } from "@mui/icons-material";
+import { useMutation, useQuery } from "@apollo/client";
+import { Add, Delete, Edit, Visibility } from "@mui/icons-material";
 import {
+  Alert,
+  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -11,6 +13,7 @@ import {
   IconButton,
   Pagination,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -21,10 +24,12 @@ import {
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { IAlert } from "../../constants/interface";
 import { ROUTE } from "../../constants/routesPath";
-import { getAuthors } from "../../services/graphql/queries";
-import { addQueryToUrl } from "../../utils/common";
+import { DELETE_AUTHOR } from "../../services/graphql/mutation";
+import { GET_AUTHORS } from "../../services/graphql/queries";
+import { addQueryToUrl, getRoutePath } from "../../utils/common";
 
 interface IColumn {
   id: string;
@@ -57,25 +62,23 @@ const columns: Array<IColumn> = [
 
 const LINE_PER_PAGE = 5;
 
-function Home() {
-  const location = useLocation();
+export function ListAuthor() {
   const navigate = useNavigate();
-  const searchParams = new URLSearchParams(location.search);
+  const [searchParams] = useSearchParams();
   const searchName = searchParams.get("searchName");
   const page = searchParams.get("page");
 
-  const { loading, data } = useQuery(getAuthors);
+  const { loading, data } = useQuery(GET_AUTHORS);
+  const [handleDeleteAuthor] = useMutation(DELETE_AUTHOR);
+
   const [listData, setListData] = useState<any>([]);
   const [searchValue, setSearchValue] = useState<string>("");
-  const [openDialog, setOpenDialog] = useState(false);
-
-  const handleClickOpen = () => {
-    setOpenDialog(true);
-  };
-
-  const handleClose = () => {
-    setOpenDialog(false);
-  };
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [deleteId, setDeleteId] = useState<string>("");
+  const [openAlert, setOpenAlert] = useState<IAlert>({
+    isOpen: false,
+    notice: "",
+  });
 
   useEffect(() => {
     const startIndex = (Number(page || 1) - 1) * LINE_PER_PAGE;
@@ -94,34 +97,86 @@ function Home() {
   }, [data?.authors, page, searchName]);
 
   const handleSearch = () => {
-    navigate(addQueryToUrl(ROUTE.HOME, { page: 1, searchName: searchValue }));
+    navigate(
+      addQueryToUrl(ROUTE.AUTHOR.LIST, { page: 1, searchName: searchValue })
+    );
   };
 
   const handlePageChange = (page: any) => {
-    navigate(addQueryToUrl(ROUTE.HOME, { page, searchName: searchValue }));
+    navigate(
+      addQueryToUrl(ROUTE.AUTHOR.LIST, { page, searchName: searchValue })
+    );
+  };
+
+  const handleClickOpen = (id: string) => {
+    setDeleteId(id);
+    setOpenDialog(true);
+  };
+
+  const handleClickClose = () => {
+    setOpenDialog(false);
+  };
+
+  const handleClickDeleteAuthor = () => {
+    handleDeleteAuthor({
+      variables: { id: deleteId },
+      refetchQueries: [{ query: GET_AUTHORS }],
+    });
+    handleClickClose();
+    setOpenAlert({
+      isOpen: true,
+      notice: "Delete success",
+    });
   };
 
   if (loading)
     return (
-      <div className="loading-container">
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingTop: "36px",
+        }}
+      >
         <CircularProgress />
-      </div>
+      </Box>
     );
 
   return (
-    <div className="container">
-      <div className="content">
-        <div className="content-header">
-          <div>
-            <Button
-              variant="outlined"
-              onClick={() => navigate(ROUTE.CREATE_AUTHOR)}
-              startIcon={<Add />}
-            >
-              Add author
-            </Button>
-          </div>
-          <div className="wrap-search">
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        padding: "24px 36px",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: "1024px",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "24px",
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={() => navigate(ROUTE.AUTHOR.CREATE)}
+            startIcon={<Add />}
+          >
+            Add author
+          </Button>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "end",
+            }}
+          >
             <TextField
               id="outlined-basic"
               label="Enter name"
@@ -133,8 +188,8 @@ function Home() {
             <Button variant="contained" onClick={handleSearch}>
               Search
             </Button>
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         <TableContainer component={Paper}>
           <Table aria-label="simple-table">
@@ -161,10 +216,28 @@ function Home() {
                   </TableCell>
                   <TableCell align="center">{item.age}</TableCell>
                   <TableCell align="center">
-                    <IconButton>
+                    <IconButton
+                      onClick={() =>
+                        navigate(
+                          getRoutePath(ROUTE.AUTHOR.DETAIL, { id: item.id })
+                        )
+                      }
+                    >
+                      <Visibility />
+                    </IconButton>
+                    <IconButton
+                      onClick={() =>
+                        navigate(
+                          getRoutePath(ROUTE.AUTHOR.EDIT, { id: item.id })
+                        )
+                      }
+                    >
                       <Edit />
                     </IconButton>
-                    <IconButton color="error" onClick={handleClickOpen}>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleClickOpen(item.id)}
+                    >
                       <Delete />
                     </IconButton>
                   </TableCell>
@@ -173,7 +246,14 @@ function Home() {
             </TableBody>
           </Table>
         </TableContainer>
-        <div className="wrap-pagination">
+        <Box
+          sx={{
+            marginTop: "32px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <Pagination
             count={Math.ceil(data?.authors?.length / LINE_PER_PAGE) || 1}
             variant="outlined"
@@ -181,9 +261,9 @@ function Home() {
             page={Number(page)}
             onChange={(_, page) => handlePageChange(page)}
           />
-        </div>
-      </div>
-      <Dialog open={openDialog} onClose={handleClose}>
+        </Box>
+      </Box>
+      <Dialog open={openDialog} onClose={handleClickClose}>
         <DialogTitle>Are you sure you want to delete?</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -191,14 +271,20 @@ function Home() {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleClose} autoFocus>
+          <Button onClick={handleClickClose}>Cancel</Button>
+          <Button onClick={handleClickDeleteAuthor} autoFocus>
             OK
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+      <Snackbar
+        open={openAlert.isOpen}
+        onClose={() => setOpenAlert({ notice: "", isOpen: false })}
+        autoHideDuration={2000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert severity="success">{openAlert.notice}</Alert>
+      </Snackbar>
+    </Box>
   );
 }
-
-export default Home;

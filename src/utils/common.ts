@@ -5,3 +5,16 @@ export const addQueryToUrl = (url: string, params: object) => {
     .join("&");
   return `${url}${separator}${queryString}`;
 };
+
+export const getRoutePath = (
+  path: string,
+  obj: { [key: string]: number }
+): string => {
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      path = path.replace(`:${key}`, String(obj[key]));
+    }
+  }
+
+  return path;
+};

@@ -1,4 +1,9 @@
 export const ROUTE = {
   HOME: "/",
-  CREATE_AUTHOR: "create-author",
+  AUTHOR: {
+    LIST: "/authors",
+    CREATE: "/authors/create",
+    DETAIL: "/authors/:id",
+    EDIT: "/authors/:id/edit",
+  },
 };
