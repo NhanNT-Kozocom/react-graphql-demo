@@ -23,7 +23,7 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { IAlert } from "../../constants/interface";
 import { ROUTE } from "../../constants/routesPath";
@@ -81,15 +81,18 @@ export function ListAuthor() {
 
   const startIndex = (Number(page || 1) - 1) * LINE_PER_PAGE;
 
-  let listData = [];
-  if (searchName) {
-    const lowerSearchTerm = searchName?.toLowerCase();
-    listData = data?.authors
-      .filter((item: any) => item.name.toLowerCase().includes(lowerSearchTerm))
-      .slice(startIndex, startIndex + LINE_PER_PAGE);
-  } else {
-    listData = data?.authors.slice(startIndex, startIndex + LINE_PER_PAGE);
-  }
+  const listData = useMemo(() => {
+    if (searchName) {
+      const lowerSearchTerm = searchName.toLowerCase();
+      return data?.authors
+        .filter((item: any) =>
+          item.name.toLowerCase().includes(lowerSearchTerm)
+        )
+        .slice(startIndex, startIndex + LINE_PER_PAGE);
+    } else {
+      return data?.authors.slice(startIndex, startIndex + LINE_PER_PAGE);
+    }
+  }, [searchName, data?.authors, startIndex]);
 
   const handleSearch = () => {
     setSearchParams({ page: "1", searchName: searchValue });
