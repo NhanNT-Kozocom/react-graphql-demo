@@ -23,13 +23,13 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { IAlert } from "../../constants/interface";
 import { ROUTE } from "../../constants/routesPath";
 import { DELETE_AUTHOR } from "../../services/graphql/mutation";
 import { GET_AUTHORS } from "../../services/graphql/queries";
-import { addQueryToUrl, getRoutePath } from "../../utils/common";
+import { getRoutePath } from "../../utils/common";
 
 interface IColumn {
   id: string;
@@ -64,14 +64,13 @@ const LINE_PER_PAGE = 5;
 
 export function ListAuthor() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const searchName = searchParams.get("searchName");
   const page = searchParams.get("page");
 
   const { loading, data } = useQuery(GET_AUTHORS);
   const [handleDeleteAuthor] = useMutation(DELETE_AUTHOR);
 
-  const [listData, setListData] = useState<any>([]);
   const [searchValue, setSearchValue] = useState<string>("");
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [deleteId, setDeleteId] = useState<string>("");
@@ -80,32 +79,24 @@ export function ListAuthor() {
     notice: "",
   });
 
-  useEffect(() => {
-    const startIndex = (Number(page || 1) - 1) * LINE_PER_PAGE;
-    const endIndex = startIndex + LINE_PER_PAGE;
-    if (searchName) {
-      const lowerSearchTerm = searchName?.toLowerCase();
-      return setListData(
-        data?.authors
-          ?.filter((item: any) =>
-            item.name.toLowerCase().includes(lowerSearchTerm)
-          )
-          ?.slice(startIndex, endIndex)
-      );
-    }
-    return setListData(data?.authors?.slice(startIndex, endIndex));
-  }, [data?.authors, page, searchName]);
+  const startIndex = (Number(page || 1) - 1) * LINE_PER_PAGE;
+
+  let listData = [];
+  if (searchName) {
+    const lowerSearchTerm = searchName?.toLowerCase();
+    listData = data?.authors
+      .filter((item: any) => item.name.toLowerCase().includes(lowerSearchTerm))
+      .slice(startIndex, startIndex + LINE_PER_PAGE);
+  } else {
+    listData = data?.authors.slice(startIndex, startIndex + LINE_PER_PAGE);
+  }
 
   const handleSearch = () => {
-    navigate(
-      addQueryToUrl(ROUTE.AUTHOR.LIST, { page: 1, searchName: searchValue })
-    );
+    setSearchParams({ page: "1", searchName: searchValue });
   };
 
   const handlePageChange = (page: any) => {
-    navigate(
-      addQueryToUrl(ROUTE.AUTHOR.LIST, { page, searchName: searchValue })
-    );
+    setSearchParams({ page, searchName: searchValue });
   };
 
   const handleClickOpen = (id: string) => {
@@ -117,16 +108,26 @@ export function ListAuthor() {
     setOpenDialog(false);
   };
 
-  const handleClickDeleteAuthor = () => {
-    handleDeleteAuthor({
-      variables: { id: deleteId },
-      refetchQueries: [{ query: GET_AUTHORS }],
-    });
-    handleClickClose();
-    setOpenAlert({
-      isOpen: true,
-      notice: "Delete success",
-    });
+  const handleClickDeleteAuthor = async () => {
+    try {
+      await handleDeleteAuthor({
+        variables: { id: deleteId },
+        refetchQueries: [{ query: GET_AUTHORS }],
+      });
+      handleClickClose();
+      setOpenAlert({
+        isOpen: true,
+        notice: "Delete success",
+        severity: "success",
+      });
+    } catch (error) {
+      handleClickClose();
+      setOpenAlert({
+        isOpen: true,
+        notice: "Delete error",
+        severity: "error",
+      });
+    }
   };
 
   if (loading)
@@ -283,7 +284,7 @@ export function ListAuthor() {
         autoHideDuration={2000}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert severity="success">{openAlert.notice}</Alert>
+        <Alert severity={openAlert.severity}>{openAlert.notice}</Alert>
       </Snackbar>
     </Box>
   );

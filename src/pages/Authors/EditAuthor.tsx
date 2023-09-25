@@ -36,12 +36,24 @@ export function EditAuthor() {
     }
   }, [data, setValue]);
 
-  const onSubmit = (data: any) => {
-    handleEditAuthor({
-      variables: { id, name: data.name, age: parseInt(data.age) },
-      refetchQueries: [{ query: GET_AUTHORS }],
-    });
-    setOpenAlert({ isOpen: true, notice: "Edit author success" });
+  const onSubmit = async (data: any) => {
+    try {
+      await handleEditAuthor({
+        variables: { id, name: data.name, age: parseInt(data.age) },
+        refetchQueries: [{ query: GET_AUTHORS }],
+      });
+      setOpenAlert({
+        isOpen: true,
+        notice: "Edit author success",
+        severity: "success",
+      });
+    } catch (error) {
+      setOpenAlert({
+        isOpen: true,
+        notice: "Edit author error",
+        severity: "error",
+      });
+    }
   };
 
   if (loading)
@@ -116,7 +128,7 @@ export function EditAuthor() {
         autoHideDuration={3000}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert severity="success">{openAlert.notice}</Alert>
+        <Alert severity={openAlert.severity}>{openAlert.notice}</Alert>
       </Snackbar>
     </Box>
   );

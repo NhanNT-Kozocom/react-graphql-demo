@@ -16,13 +16,25 @@ export function CreateAuthor() {
     notice: "",
   });
 
-  const onSubmit = (data: any) => {
-    handleCreateAuthor({
-      variables: { name: data.name, age: parseInt(data.age) },
-      refetchQueries: [{ query: GET_AUTHORS }],
-    });
-    setOpenAlert({ isOpen: true, notice: "Create author success" });
-    reset();
+  const onSubmit = async (data: any) => {
+    try {
+      await handleCreateAuthor({
+        variables: { name: data.name, age: parseInt(data.age) },
+        refetchQueries: [{ query: GET_AUTHORS }],
+      });
+      setOpenAlert({
+        isOpen: true,
+        notice: "Create author success",
+        severity: "success",
+      });
+      reset();
+    } catch (error) {
+      setOpenAlert({
+        isOpen: true,
+        notice: "Create author error",
+        severity: "error",
+      });
+    }
   };
 
   return (
@@ -83,7 +95,7 @@ export function CreateAuthor() {
         autoHideDuration={3000}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert severity="success">{openAlert.notice}</Alert>
+        <Alert severity={openAlert.severity}>{openAlert.notice}</Alert>
       </Snackbar>
     </Box>
   );
