@@ -1,12 +1,30 @@
 import { gql } from "@apollo/client";
 
-export const getLocation = gql`
-  query getLocations {
-    locations {
+export const GET_AUTHORS = gql`
+  query getAuthors {
+    authors {
       id
       name
-      description
-      photo
+      age
+    }
+  }
+`;
+
+export const GET_AUTHOR = gql`
+  query getAuthor($id: ID!) {
+    author(id: $id) {
+      name
+      age
+    }
+  }
+`;
+
+export const GET_BOOKS = gql`
+  query getBooks {
+    books {
+      id
+      name
+      genre
     }
   }
 `;
